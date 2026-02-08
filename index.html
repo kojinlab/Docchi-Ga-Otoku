@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>どっちがお得？</title>
+    <style>
+        :root {
+            --bg-start: #f7f4ef;
+            --bg-end: #e9eef6;
+            --surface: rgba(255, 255, 255, 0.85);
+            --surface-strong: rgba(255, 255, 255, 0.96);
+            --line: rgba(15, 23, 42, 0.08);
+            --text: #1f2937;
+            --muted: #707887;
+            --accent: #ff6b4a;
+            --accent-soft: rgba(255, 107, 74, 0.14);
+            --shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
+        }
+
+        /* デザインの基本設定 */
+        body {
+            font-family: "Manrope", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+            background: radial-gradient(120% 140% at 20% 10%, #ffffff 0%, var(--bg-start) 45%, var(--bg-end) 100%);
+            color: var(--text);
+            margin: 0;
+            padding: max(36px, env(safe-area-inset-top)) 12px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: -30% auto auto -10%;
+            width: 65vmax;
+            height: 65vmax;
+            background: radial-gradient(circle at 30% 30%, rgba(255, 107, 74, 0.22), transparent 60%);
+            filter: blur(8px);
+            opacity: 0.7;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        body::after {
+            content: "";
+            position: fixed;
+            inset: auto -30% -35% auto;
+            width: 70vmax;
+            height: 70vmax;
+            background: radial-gradient(circle at 35% 35%, rgba(14, 165, 233, 0.18), transparent 62%);
+            filter: blur(10px);
+            opacity: 0.6;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        h1 {
+            font-size: 1.35rem;
+            color: var(--muted);
+            margin-bottom: 18px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            z-index: 1;
+            animation: fade-in 0.5s ease-out;
+        }
+
+        /* 入力カードのデザイン */
+        .card-container {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+            width: 100%;
+            max-width: 420px;
+            margin-bottom: 14px;
+            z-index: 1;
+        }
+
+        .card {
+            background: var(--surface-strong);
+            border-radius: 18px;
+            padding: 14px 12px;
+            box-shadow: var(--shadow);
+            transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+            border: 1px solid var(--line);
+            position: relative;
+            backdrop-filter: blur(10px);
+            animation: card-in 0.45s ease-out;
+        }
+
+        .card.winner {
+            border-color: rgba(255, 107, 74, 0.4);
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 248, 244, 0.95) 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 18px 36px rgba(255, 107, 74, 0.18);
+        }
+
+        .card-title {
+            text-align: center;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 10px;
+            font-size: 0.85rem;
+            letter-spacing: 0.08em;
+        }
+
+        /* 入力エリア */
+        .input-group {
+            margin-bottom: 10px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.7rem;
+            color: var(--muted);
+            margin-bottom: 6px;
+            letter-spacing: 0.05em;
+        }
+
+        input {
+            width: 100%;
+            padding: 8px 0;
+            border: none;
+            border-bottom: 1px solid rgba(15, 23, 42, 0.1);
+            font-size: 1.05rem;
+            text-align: center;
+            outline: none;
+            background: transparent;
+            box-sizing: border-box;
+            color: var(--text);
+            transition: border-color 0.2s;
+        }
+
+        input::placeholder {
+            color: rgba(112, 120, 135, 0.35);
+        }
+
+        input:focus {
+            border-bottom-color: var(--accent);
+        }
+
+        /* 結果表示 */
+        .result-price {
+            text-align: center;
+            margin-top: 8px;
+            font-size: 0.75rem;
+            color: var(--muted);
+            letter-spacing: 0.04em;
+        }
+        
+        .result-price span {
+            display: block;
+            font-size: 0.98rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-top: 4px;
+        }
+
+        /* 判定ボタン */
+        .button-row {
+            display: flex;
+            gap: 12px;
+            width: 100%;
+            max-width: 420px;
+            z-index: 1;
+            animation: fade-in 0.6s ease-out;
+        }
+
+        .btn {
+            flex: 1;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 999px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
+            color: white;
+            box-shadow: 0 12px 28px rgba(17, 24, 39, 0.25);
+        }
+
+        .btn-ghost {
+            background: rgba(255, 255, 255, 0.7);
+            color: var(--text);
+            border: 1px solid var(--line);
+            box-shadow: 0 10px 22px rgba(15, 23, 42, 0.1);
+            backdrop-filter: blur(8px);
+        }
+
+        .btn:active {
+            opacity: 0.88;
+            transform: translateY(1px);
+        }
+
+        /* 勝利アイコン */
+        .badge {
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--accent);
+            color: white;
+            padding: 5px 14px;
+            border-radius: 999px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            display: none;
+            box-shadow: 0 8px 18px rgba(255, 107, 74, 0.35);
+            letter-spacing: 0.08em;
+        }
+
+        .winner .badge {
+            display: block;
+        }
+
+        @keyframes fade-in {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes card-in {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 520px) {
+            .card-container { gap: 10px; }
+            .card { padding: 12px 10px; }
+            h1 { font-size: 1rem; }
+            .btn { padding: 10px 18px; font-size: 0.85rem; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <h1>どっちがお得？</h1>
+
+    <div class="card-container">
+        <div class="card" id="cardA">
+            <div class="badge">WIN!</div>
+            <div class="card-title">A</div>
+            
+            <div class="input-group">
+                <label>価格 (円)</label>
+                <input type="text" id="priceA" class="num-input" placeholder="1000" inputmode="decimal">
+            </div>
+            <div class="input-group">
+                <label>個数・容量</label>
+                <input type="text" id="amountA" class="num-input" placeholder="3" inputmode="decimal">
+            </div>
+
+            <div class="result-price">単価: <span id="unitA">-</span></div>
+        </div>
+
+        <div class="card" id="cardB">
+            <div class="badge">WIN!</div>
+            <div class="card-title">B</div>
+            
+            <div class="input-group">
+                <label>価格 (円)</label>
+                <input type="text" id="priceB" class="num-input" placeholder="1600" inputmode="decimal">
+            </div>
+            <div class="input-group">
+                <label>個数・容量</label>
+                <input type="text" id="amountB" class="num-input" placeholder="5" inputmode="decimal">
+            </div>
+
+            <div class="result-price">単価: <span id="unitB">-</span></div>
+        </div>
+
+        <div class="card" id="cardC">
+            <div class="badge">WIN!</div>
+            <div class="card-title">C</div>
+            
+            <div class="input-group">
+                <label>価格 (円)</label>
+                <input type="text" id="priceC" class="num-input" placeholder="980" inputmode="decimal">
+            </div>
+            <div class="input-group">
+                <label>個数・容量</label>
+                <input type="text" id="amountC" class="num-input" placeholder="2" inputmode="decimal">
+            </div>
+
+            <div class="result-price">単価: <span id="unitC">-</span></div>
+        </div>
+
+        <div class="card" id="cardD">
+            <div class="badge">WIN!</div>
+            <div class="card-title">D</div>
+            
+            <div class="input-group">
+                <label>価格 (円)</label>
+                <input type="text" id="priceD" class="num-input" placeholder="2200" inputmode="decimal">
+            </div>
+            <div class="input-group">
+                <label>個数・容量</label>
+                <input type="text" id="amountD" class="num-input" placeholder="8" inputmode="decimal">
+            </div>
+
+            <div class="result-price">単価: <span id="unitD">-</span></div>
+        </div>
+    </div>
+
+    <div class="button-row">
+        <button class="btn btn-primary" onclick="calculate()">計算する</button>
+        <button class="btn btn-ghost" onclick="resetAll()">リセット</button>
+    </div>
+
+    <script>
+        function normalizeNumberInput(value) {
+            if (!value) return "";
+            return value
+                .replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
+                .replace(/[．。]/g, ".")
+                .replace(/[，,]/g, "")
+                .trim();
+        }
+
+        function resetAll() {
+            document.querySelectorAll('.num-input').forEach(input => {
+                input.value = "";
+            });
+
+            ['A', 'B', 'C', 'D'].forEach(key => {
+                const card = document.getElementById(`card${key}`);
+                const unit = document.getElementById(`unit${key}`);
+                if (card) card.classList.remove('winner');
+                if (unit) unit.innerText = '-';
+            });
+        }
+
+        document.querySelectorAll('.num-input').forEach(input => {
+            input.addEventListener('input', (e) => {
+                const normalized = normalizeNumberInput(e.target.value);
+                e.target.value = normalized;
+            });
+        });
+
+        function calculate() {
+            const entries = ['A', 'B', 'C', 'D'].map(key => {
+                const price = parseFloat(document.getElementById(`price${key}`).value);
+                const amount = parseFloat(document.getElementById(`amount${key}`).value);
+                const card = document.getElementById(`card${key}`);
+                const unitEl = document.getElementById(`unit${key}`);
+
+                if (card) card.classList.remove('winner');
+                if (unitEl) unitEl.innerText = '-';
+
+                if (!price || !amount) {
+                    return { key, unit: null };
+                }
+
+                const unit = price / amount;
+                if (unitEl) unitEl.innerText = unit.toFixed(1) + "円";
+                return { key, unit };
+            });
+
+            const validUnits = entries.filter(item => typeof item.unit === 'number' && !isNaN(item.unit));
+            if (validUnits.length < 2) return;
+
+            const minUnit = Math.min(...validUnits.map(item => item.unit));
+            validUnits.forEach(item => {
+                if (item.unit === minUnit) {
+                    const card = document.getElementById(`card${item.key}`);
+                    if (card) card.classList.add('winner');
+                }
+            });
+        }
+    </script>
+</body>
+</html>
+</attachment>
+<userRequest>
+はい
+</userRequest>
